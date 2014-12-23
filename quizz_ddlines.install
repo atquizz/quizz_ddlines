@@ -1,0 +1,125 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function quizz_ddlines_schema() {
+  $schema['quiz_ddlines_question'] = array(
+      'fields'      => array(
+          'qid'              => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE,),
+          'vid'              => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE,),
+          'feedback_enabled' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0,),
+          'hotspot_radius'   => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 10,),
+          'ddlines_elements' => array('type' => 'text',),
+          'execution_mode'   => array('type' => 'int', 'description' => "Execution mode. 0->with lines, 1->without lines", 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0,),
+      ),
+      'primary key' => array('qid', 'vid'),
+  );
+
+  // Place to store user answers
+  $schema['quiz_ddlines_user_answers'] = array(
+      'fields'      => array(
+          'id'           => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
+          'result_id'    => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
+          'question_qid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
+          'question_vid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
+      ),
+      'primary key' => array('id'),
+      'indexes'     => array(
+          'answer_id' => array('result_id', 'question_qid', 'question_vid'),
+      ),
+  );
+
+  $schema['quiz_ddlines_user_answer_multi'] = array(
+      'fields'       => array(
+          'user_answer_id' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
+          'hotspot_id'     => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
+          'label_id'       => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
+      ),
+      'foreign keys' => array(
+          'answer_id' => array(
+              'table'   => 'quiz_ddlines_user_answers',
+              'columns' => array('user_answer_id' => 'id'),
+          ),
+      ),
+      'indexes'      => array(
+          'answer_id' => array('user_answer_id'),
+      ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Adding Execution mode column. Makes it possible to run the test in two different modes.
+ */
+function quizz_ddlines_update_7401() {
+  // Add field for execution mode
+  $spec = array(
+      'type'        => 'int',
+      'description' => "Execution mode. 0->with lines, 1->without lines",
+      'not null'    => TRUE,
+      'unsigned'    => TRUE,
+      'default'     => 0,
+  );
+  db_add_field('quiz_ddlines_node', 'execution_mode', $spec);
+}
+
+/**
+ * Implements hook_quiz_question_upgrade_schema_node_to_entity().
+ */
+function quizz_ddlines_quiz_question_upgrade_schema_node_to_entity() {
+  if (db_table_exists('quiz_ddlines_node')) {
+    $spec_1 = array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE);
+    $spec_2 = array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE);
+    db_rename_table('quiz_ddlines_node', 'quiz_ddlines_question');
+    db_change_field('quiz_ddlines_question', 'nid', 'qid', $spec_1);
+    db_change_field('quiz_ddlines_user_answers', 'question_nid', 'question_qid', $spec_2);
+  }
+}
+
+/**
+ * Implements hook_quiz_question_upgrade_pre_drop_temp_columns().
+ */
+function quizz_ddlines_quiz_question_upgrade_pre_drop_temp_columns() {
+  // quiz_ddlines_question
+  db_query(
+    "UPDATE {quiz_ddlines_question} as ddq"
+    . " INNER JOIN {quiz_question_revision} qr ON ddq.vid = qr.node_vid"
+    . " SET ddq.qid = qr.qid, ddq.vid = qr.vid"
+    . " WHERE 1"
+  );
+
+  // quiz_ddlines_user_answers
+  db_query(
+    "UPDATE {quiz_ddlines_user_answers} AS ua"
+    . " INNER JOIN {quiz_question_revision} qr ON ua.question_vid = qr.node_vid"
+    . " SET ua.question_qid = qr.qid, ua.question_vid = qr.vid"
+    . " WHERE 1"
+  );
+}
+
+/**
+ * Make sure update script from main module is run before all.
+ */
+function quizz_ddlines_update_7600() {
+  require_once drupal_get_path('module', 'quizz_question') . '/quizz_question.install';
+  return quizz_question_update_7600();
+}
+
+/**
+ * Convert global configuration for questions to question type entity.
+ */
+function quizz_ddlines_update_7601() {
+  foreach (quizz_question_get_types() as $question_type) {
+    if ('quiz_ddlines' === $question_type->handler) {
+      $question_type
+        ->setConfig('quiz_ddlines_feedback_correct', variable_get('quiz_ddlines_feedback_correct', t('Correct')))
+        ->setConfig('quiz_ddlines_feedback_wrong', variable_get('quiz_ddlines_feedback_wrong', t('Wrong')))
+        ->setConfig('quiz_ddlines_canvas_height', variable_get('quiz_ddlines_canvas_height', 500))
+        ->setConfig('quiz_ddlines_hotspot_radius', variable_get('quiz_ddlines_hotspot_radius', 10))
+        ->save()
+      ;
+    }
+  }
+}
