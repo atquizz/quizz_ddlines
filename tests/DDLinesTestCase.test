@@ -37,7 +37,7 @@ class DDLinesTestCase extends QuizTestCase {
         'quiz_question_body[und][0][value]' => 'Demo ddlines body',
         'files[field_image_und_0]'          => DRUPAL_ROOT . '/misc/druplicon.png',
       ), 'Save question');
-    $question_id = db_query('SELECT MAX(qid) FROM {quiz_question} WHERE 1 ORDER BY qid DESC')->fetchColumn();
+    $question_id = db_query('SELECT MAX(qid) FROM {quiz_question_entity} WHERE 1 ORDER BY qid DESC')->fetchColumn();
     $question = quiz_question_entity_load($question_id);
     $this->assertTrue($question instanceof Question);
     $this->assertTrue($question->getHandler() instanceof DDLinesQuestion);
