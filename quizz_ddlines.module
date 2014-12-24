@@ -9,9 +9,9 @@ define('QUIZZ_DDLINES_WRONG', 1);
 define('QUIZZ_DDLINES_CORRECT', 2);
 
 /**
- * Implements hook_quiz_question_info().
+ * Implements hook_quizz_question_info().
  */
-function quizz_ddlines_quiz_question_info() {
+function quizz_ddlines_quizz_question_info() {
   return array(
       'quiz_ddlines' => array(
           'name'              => t('Drag and drop question with lines'),
