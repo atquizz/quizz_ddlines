@@ -21,7 +21,7 @@ class DDLinesTestCase extends QuizTestCase {
 
   private function checkStructure() {
     $field_info = field_info_field('field_image');
-    $field_instance = field_info_instance('quiz_question', 'field_image', 'default_quiz_ddlines');
+    $field_instance = field_info_instance('quiz_question_entity', 'field_image', 'default_quiz_ddlines');
     $this->assertNotNull($field_info, 'field_image is created');
     $this->assertNotNull($field_instance, 'field_image instance is added to default_quiz_ddlines bundle.');
     return !empty($field_info) && !empty($field_instance);
@@ -38,7 +38,7 @@ class DDLinesTestCase extends QuizTestCase {
         'files[field_image_und_0]'          => DRUPAL_ROOT . '/misc/druplicon.png',
       ), 'Save question');
     $question_id = db_query('SELECT MAX(qid) FROM {quiz_question_entity} WHERE 1 ORDER BY qid DESC')->fetchColumn();
-    $question = quiz_question_entity_load($question_id);
+    $question = quizz_question_load($question_id);
     $this->assertTrue($question instanceof Question);
     $this->assertTrue($question->getHandler() instanceof DDLinesQuestion);
     return $question;

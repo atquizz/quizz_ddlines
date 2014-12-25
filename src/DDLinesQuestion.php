@@ -13,17 +13,17 @@ class DDLinesQuestion extends QuestionHandler {
   public function onNewQuestionTypeCreated(QuestionType $question_type) {
     parent::onNewQuestionTypeCreated($question_type);
 
-    if (!field_info_instance('quiz_question', 'field_image', $question_type->type)) {
+    if (!field_info_instance('quiz_question_entity', 'field_image', $question_type->type)) {
       $bundle = $question_type->type;
 
       if (!field_info_field('field_image')) {
         field_create_field(array('type' => 'image', 'field_name' => 'field_image'));
       }
 
-      if (!field_info_instance('quiz_question', 'field_image', $bundle)) {
+      if (!field_info_instance('quiz_question_entity', 'field_image', $bundle)) {
         field_create_instance(array(
             'field_name'  => 'field_image',
-            'entity_type' => 'quiz_question',
+            'entity_type' => 'quiz_question_entity',
             'bundle'      => $bundle,
             'label'       => t('Background image'),
             'required'    => TRUE,
