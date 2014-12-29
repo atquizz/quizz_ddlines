@@ -10,7 +10,7 @@ use Drupal\quizz_question\ResponseHandler;
  */
 class DDLinesResponse extends ResponseHandler {
 
-  protected $base_table = 'quiz_ddlines_user_answers';
+  protected $base_table = 'quiz_ddlines_answer';
 
   /**
    * Contains a assoc array with label-ID as key and hotspot-ID as value.
@@ -35,8 +35,8 @@ class DDLinesResponse extends ResponseHandler {
     // Load from database
     else {
       $query = db_query(
-        'SELECT label_id, hotspot_id FROM {quiz_ddlines_user_answers} ua
-         LEFT OUTER JOIN {quiz_ddlines_user_answer_multi} uam ON(uam.user_answer_id = ua.id)
+        'SELECT label_id, hotspot_id FROM {quiz_ddlines_answer} ua
+         LEFT OUTER JOIN {quiz_ddlines_answer_multi} uam ON(uam.user_answer_id = ua.id)
          WHERE ua.result_id = :result_id AND ua.question_qid = :question_qid AND ua.question_vid = :question_vid', array(
           ':result_id'    => $result_id,
           ':question_qid' => $this->question->qid,
@@ -52,7 +52,7 @@ class DDLinesResponse extends ResponseHandler {
    * Save the current response.
    */
   public function save() {
-    $user_answer_id = db_insert('quiz_ddlines_user_answers')
+    $user_answer_id = db_insert('quiz_ddlines_answer')
       ->fields(array(
           'question_qid' => $this->question->qid,
           'question_vid' => $this->question->vid,
@@ -61,7 +61,7 @@ class DDLinesResponse extends ResponseHandler {
       ->execute();
 
     // Each alternative is inserted as a separate row
-    $query = db_insert('quiz_ddlines_user_answer_multi')
+    $query = db_insert('quiz_ddlines_answer_multi')
       ->fields(array('user_answer_id', 'label_id', 'hotspot_id'));
     foreach ($this->user_answers as $key => $value) {
       $query->values(array($user_answer_id, $key, $value));
@@ -74,13 +74,13 @@ class DDLinesResponse extends ResponseHandler {
    */
   public function delete() {
     $user_answer_ids = array();
-    $query = db_query('SELECT id FROM {quiz_ddlines_user_answers} WHERE question_qid = :qid AND question_vid = :vid AND result_id = :result_id', array(':qid' => $this->question->qid, ':vid' => $this->question->vid, ':result_id' => $this->result_id));
+    $query = db_query('SELECT id FROM {quiz_ddlines_answer} WHERE question_qid = :qid AND question_vid = :vid AND result_id = :result_id', array(':qid' => $this->question->qid, ':vid' => $this->question->vid, ':result_id' => $this->result_id));
     while ($answer = $query->fetch()) {
       $user_answer_ids[] = $answer->id;
     }
 
     if (!empty($user_answer_ids)) {
-      db_delete('quiz_ddlines_user_answer_multi')
+      db_delete('quiz_ddlines_answer_multi')
         ->condition('user_answer_id', $user_answer_ids, 'IN')
         ->execute();
     }
@@ -206,7 +206,7 @@ class DDLinesResponse extends ResponseHandler {
 
     drupal_add_js(array('quiz_ddlines' => $settings), 'setting');
 
-    _quiz_ddlines_add_js_and_css();
+    quizz_ddlines_add_js_and_css();
 
     return array('#markup' => $html);
   }

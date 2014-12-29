@@ -9,7 +9,7 @@
  *
  * @param array $vars
  */
-function theme_quiz_ddlines_response($vars) {
+function theme_quizz_ddlines_response($vars) {
   if (!$css_added = &drupal_static(__FUNCTION__)) {
     drupal_add_css(drupal_get_path('module', 'quizz_ddlines') . '/theme/quizz_ddlines.css');
     $css_added = TRUE;

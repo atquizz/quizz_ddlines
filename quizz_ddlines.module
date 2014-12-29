@@ -45,7 +45,7 @@ function quizz_ddlines_image_default_styles() {
  */
 function quizz_ddlines_theme() {
   return array(
-      'quiz_ddlines_response' => array(
+      'quizz_ddlines_response' => array(
           'variables' => array('result' => array()),
           'path'      => drupal_get_path('module', 'quizz_ddlines') . '/theme',
           'file'      => 'quizz_ddlines.theme.inc',
@@ -106,7 +106,7 @@ function quizz_ddlines_config_validate($form, $form_state) {
   // Feedback fields may contain nothing or everything; no need to validate it
 }
 
-function _quiz_ddlines_add_js_and_css() {
+function quizz_ddlines_add_js_and_css() {
   $module_path = drupal_get_path('module', 'quizz_ddlines');
   drupal_add_js($module_path . '/js/raphael-min.js');
   drupal_add_js($module_path . '/js/colorwheel.js');

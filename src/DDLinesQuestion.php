@@ -113,7 +113,7 @@ class DDLinesQuestion extends QuestionHandler {
     );
 
     drupal_add_library('system', 'ui.resizable');
-    _quiz_ddlines_add_js_and_css();
+    quizz_ddlines_add_js_and_css();
 
     return $form;
   }
@@ -192,7 +192,7 @@ class DDLinesQuestion extends QuestionHandler {
     );
 
     drupal_add_js(array('quiz_ddlines' => array('mode' => 'take') + $this->getDefaultAltSettings()), 'setting');
-    _quiz_ddlines_add_js_and_css();
+    quizz_ddlines_add_js_and_css();
 
     return $form;
   }
@@ -264,27 +264,27 @@ class DDLinesQuestion extends QuestionHandler {
    */
   public function delete($single_revision = FALSE) {
     $delete_question = db_delete('quiz_ddlines_question')->condition('qid', $this->question->qid);
-    $delete_results = db_delete('quiz_ddlines_user_answers')->condition('question_qid', $this->question->qid);
+    $delete_results = db_delete('quiz_ddlines_answer')->condition('question_qid', $this->question->qid);
 
     if ($single_revision) {
       $delete_question->condition('vid', $this->question->vid);
       $delete_results->condition('question_vid', $this->question->vid);
     }
 
-    // Delete from table quiz_ddlines_user_answer_multi
+    // Delete from table quiz_ddlines_answer_multi
     $user_answer_ids = array();
     if ($single_revision) {
-      $query = db_query('SELECT id FROM {quiz_ddlines_user_answers} WHERE question_qid = :qid AND question_vid = :vid', array(':qid' => $this->question->qid, ':vid' => $this->question->vid));
+      $query = db_query('SELECT id FROM {quiz_ddlines_answer} WHERE question_qid = :qid AND question_vid = :vid', array(':qid' => $this->question->qid, ':vid' => $this->question->vid));
     }
     else {
-      $query = db_query('SELECT id FROM {quiz_ddlines_user_answers} WHERE question_qid = :qid', array(':qid' => $this->question->qid));
+      $query = db_query('SELECT id FROM {quiz_ddlines_answer} WHERE question_qid = :qid', array(':qid' => $this->question->qid));
     }
     while ($user_answer = $query->fetch()) {
       $user_answer_ids[] = $user_answer->id;
     }
 
     if (count($user_answer_ids)) {
-      db_delete('quiz_ddlines_user_answer_multi')
+      db_delete('quiz_ddlines_answer_multi')
         ->condition('user_answer_id', $user_answer_ids)
         ->execute();
     }
