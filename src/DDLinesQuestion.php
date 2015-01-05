@@ -260,4 +260,40 @@ class DDLinesQuestion extends QuestionHandler {
     return $props;
   }
 
+  public function questionTypeConfigForm(QuestionType $question_type) {
+    $form['quiz_ddlines_canvas_width'] = array(
+        '#type'          => 'textfield',
+        '#title'         => t('The default width of the canvas'),
+        '#default_value' => $question_type->getConfig('quiz_ddlines_canvas_width', 700),
+    );
+    $form['quiz_ddlines_canvas_height'] = array(
+        '#type'          => 'textfield',
+        '#title'         => t('The default height of the canvas'),
+        '#default_value' => $question_type->getConfig('quiz_ddlines_canvas_height', 500),
+    );
+    $form['quiz_ddlines_hotspot_radius'] = array(
+        '#type'          => 'textfield',
+        '#title'         => t('The radius of the hotspot'),
+        '#default_value' => $question_type->getConfig('quiz_ddlines_hotspot_radius', 10),
+    );
+    $form['quiz_ddlines_pointer_radius'] = array(
+        '#type'          => 'textfield',
+        '#title'         => t('The radius of the pointer'),
+        '#default_value' => $question_type->getConfig('quiz_ddlines_pointer_radius', 5),
+    );
+    $form['quiz_ddlines_feedback_correct'] = array(
+        '#type'          => 'textfield',
+        '#title'         => t('Default feedback for correct answers'),
+        '#default_value' => $question_type->getConfig('quiz_ddlines_feedback_correct', ''),
+    );
+    $form['quiz_ddlines_feedback_wrong'] = array(
+        '#type'          => 'textfield',
+        '#title'         => t('Default feedback for wrong answers'),
+        '#default_value' => $question_type->getConfig('quiz_ddlines_feedback_wrong', ''),
+    );
+
+    $form['#validate'][] = 'quizz_ddlines_config_validate';
+    return $form;
+  }
+
 }
