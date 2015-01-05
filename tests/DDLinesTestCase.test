@@ -3,9 +3,6 @@
 use Drupal\quizz_ddlines\DDLinesQuestion;
 use Drupal\quizz_question\Entity\Question;
 
-/**
- * Test class for true false questions.
- */
 class DDLinesTestCase extends QuizTestCase {
 
   protected $questionHandler = 'quiz_ddlines';
