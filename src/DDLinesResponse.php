@@ -2,94 +2,56 @@
 
 namespace Drupal\quizz_ddlines;
 
+use Drupal\quizz\Entity\Answer;
 use Drupal\quizz_question\Entity\Question;
 use Drupal\quizz_question\ResponseHandler;
 
-/**
- * Extension of QuizQuestionResponse
- */
 class DDLinesResponse extends ResponseHandler {
 
   protected $base_table = 'quiz_ddlines_answer';
 
-  /**
-   * Contains a assoc array with label-ID as key and hotspot-ID as value.
-   * @var array
-   */
-  protected $user_answers = array();
+  public function __construct($result_id, Question $question, $input = NULL) {
+    parent::__construct($result_id, $question, $input);
 
-  public function __construct($result_id, Question $question, $tries = NULL) {
-    parent::__construct($result_id, $question, $tries);
-
-    // Is answers set in form?
-    if (isset($tries)) {
-      // Tries contains the answer decoded as JSON:
-      // {"label_id":x,"hotspot_id":y},{…}
-      $decoded = json_decode($tries);
-      if (is_array($decoded)) {
+    if (NULL === $input) {
+      if (($answer = $this->loadAnswerEntity()) && ($input = $answer->getInput())) {
+        $this->answer = $input;
+      }
+    }
+    else {
+      // Input decoded as JSON: [ {"label_id":x,"hotspot_id":y} ]
+      if (($decoded = json_decode($input)) && is_array($decoded)) {
         foreach ($decoded as $answer) {
-          $this->user_answers[$answer->label_id] = $answer->hotspot_id;
+          $this->answer[$answer->label_id] = $answer->hotspot_id;
         }
       }
     }
-    // Load from database
-    else {
-      $query = db_query(
-        'SELECT label_id, hotspot_id FROM {quiz_ddlines_answer} ua
-         LEFT OUTER JOIN {quiz_ddlines_answer_multi} uam ON(uam.user_answer_id = ua.id)
-         WHERE ua.result_id = :result_id AND ua.question_qid = :question_qid AND ua.question_vid = :question_vid', array(
-          ':result_id'    => $result_id,
-          ':question_qid' => $this->question->qid,
-          ':question_vid' => $this->question->vid
-      ));
-      while ($row = $query->fetch()) {
-        $this->user_answers[$row->label_id] = $row->hotspot_id;
-      }
+  }
+
+  public function onLoad(Answer $answer) {
+    $sql = 'SELECT label_id, hotspot_id FROM {quiz_ddlines_answer} WHERE answer_id = :id';
+    $query = db_query($sql, array(':id' => $answer->id));
+    $input = array();
+    while ($row = $query->fetch()) {
+      $input[$row->label_id] = $row->hotspot_id;
     }
+    $answer->setInput($input);
   }
 
   /**
-   * Save the current response.
+   * {@inheritdoc}
    */
   public function save() {
-    $user_answer_id = db_insert('quiz_ddlines_answer')
-      ->fields(array(
-          'question_qid' => $this->question->qid,
-          'question_vid' => $this->question->vid,
-          'result_id'    => $this->result_id,
-      ))
-      ->execute();
-
-    // Each alternative is inserted as a separate row
-    $query = db_insert('quiz_ddlines_answer_multi')
-      ->fields(array('user_answer_id', 'label_id', 'hotspot_id'));
-    foreach ($this->user_answers as $key => $value) {
-      $query->values(array($user_answer_id, $key, $value));
+    $answer_id = $this->loadAnswerEntity()->id;
+    $insert = db_insert('quiz_ddlines_answer_multi')->fields(array('answer_id', 'label_id', 'hotspot_id'));
+    foreach ($this->answer as $key => $value) {
+      $insert->values(array($answer_id, $key, $value));
     }
-    $query->execute();
+    $insert->execute();
   }
 
   /**
-   * Delete the response.
-   */
-  public function delete() {
-    $user_answer_ids = array();
-    $query = db_query('SELECT id FROM {quiz_ddlines_answer} WHERE question_qid = :qid AND question_vid = :vid AND result_id = :result_id', array(':qid' => $this->question->qid, ':vid' => $this->question->vid, ':result_id' => $this->result_id));
-    while ($answer = $query->fetch()) {
-      $user_answer_ids[] = $answer->id;
-    }
-
-    if (!empty($user_answer_ids)) {
-      db_delete('quiz_ddlines_answer_multi')
-        ->condition('user_answer_id', $user_answer_ids, 'IN')
-        ->execute();
-    }
-
-    parent::delete();
-  }
-
-  /**
-   * Calculate the score for the response.
+   * {@inheritdoc}
    */
   public function score() {
     $results = $this->getDragDropResults();
@@ -102,13 +64,6 @@ class DDLinesResponse extends ResponseHandler {
     }
 
     return $correct_count;
-  }
-
-  /**
-   * Get the user's response.
-   */
-  public function getResponse() {
-    return $this->user_answers;
   }
 
   public function getFeedbackValues() {
@@ -142,8 +97,7 @@ class DDLinesResponse extends ResponseHandler {
 
     $elements_answered = array();
 
-    foreach ($this->user_answers as $label_id => $hotspot_id) {
-
+    foreach ($this->answer as $label_id => $hotspot_id) {
       if (!isset($hotspot_id)) {
         continue;
       }
@@ -254,8 +208,8 @@ class DDLinesResponse extends ResponseHandler {
     foreach (json_decode($this->question->ddlines_elements)->elements as $element) {
       $source_id = $element->label->id;
 
-      if (isset($this->user_answers[$source_id])) {
-        $results[$element->label->id] = ($this->user_answers[$source_id] == $element->hotspot->id) ? QUIZZ_DDLINES_CORRECT : QUIZZ_DDLINES_WRONG;
+      if (isset($this->answer[$source_id])) {
+        $results[$element->label->id] = ($this->answer[$source_id] == $element->hotspot->id) ? QUIZZ_DDLINES_CORRECT : QUIZZ_DDLINES_WRONG;
       }
       else {
         $results[$element->label->id] = 0;

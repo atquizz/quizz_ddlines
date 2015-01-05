@@ -16,35 +16,13 @@ function quizz_ddlines_schema() {
       'primary key' => array('qid', 'vid'),
   );
 
-  // Place to store user answers
   $schema['quiz_ddlines_answer'] = array(
       'fields'      => array(
-          'id'           => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
-          'result_id'    => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
-          'question_qid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
-          'question_vid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
+          'answer_id'  => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
+          'hotspot_id' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
+          'label_id'   => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
       ),
-      'primary key' => array('id'),
-      'indexes'     => array(
-          'answer_id' => array('result_id', 'question_qid', 'question_vid'),
-      ),
-  );
-
-  $schema['quiz_ddlines_answer_multi'] = array(
-      'fields'       => array(
-          'user_answer_id' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
-          'hotspot_id'     => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
-          'label_id'       => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
-      ),
-      'foreign keys' => array(
-          'answer_id' => array(
-              'table'   => 'quiz_ddlines_answer',
-              'columns' => array('user_answer_id' => 'id'),
-          ),
-      ),
-      'indexes'      => array(
-          'answer_id' => array('user_answer_id'),
-      ),
+      'primary key' => array('answer_id'),
   );
 
   return $schema;

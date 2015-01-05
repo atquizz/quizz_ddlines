@@ -10,6 +10,9 @@ use Drupal\quizz_question\QuestionHandler;
  */
 class DDLinesQuestion extends QuestionHandler {
 
+  protected $base_table = 'quiz_ddlines_question';
+  protected $base_answer_table = 'quiz_ddlines_answer';
+
   public function onNewQuestionTypeCreated(QuestionType $question_type) {
     parent::onNewQuestionTypeCreated($question_type);
 
@@ -237,9 +240,7 @@ class DDLinesQuestion extends QuestionHandler {
   }
 
   /**
-   * Implementation of load
-   *
-   * @see QuizQuestion#load()
+   * {@inheritdoc}
    */
   public function load() {
     if (isset($this->properties) && !empty($this->properties)) {
@@ -247,51 +248,16 @@ class DDLinesQuestion extends QuestionHandler {
     }
     $props = parent::load();
 
-    $res_a = db_query(
-      'SELECT feedback_enabled, hotspot_radius, ddlines_elements, execution_mode FROM {quiz_ddlines_question} WHERE qid = :qid AND vid = :vid', array(
-        ':qid' => $this->question->qid,
-        ':vid' => $this->question->vid))->fetchAssoc();
+    $sql = 'SELECT feedback_enabled, hotspot_radius, ddlines_elements, execution_mode';
+    $sql .= ' FROM {quiz_ddlines_question}';
+    $sql .= ' WHERE vid = :vid';
+    $res_a = db_query($sql, array(':vid' => $this->question->vid))->fetchAssoc();
 
     if (is_array($res_a)) {
       $props = array_merge($props, $res_a);
     }
     $this->properties = $props;
     return $props;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function delete($single_revision = FALSE) {
-    $delete_question = db_delete('quiz_ddlines_question')->condition('qid', $this->question->qid);
-    $delete_results = db_delete('quiz_ddlines_answer')->condition('question_qid', $this->question->qid);
-
-    if ($single_revision) {
-      $delete_question->condition('vid', $this->question->vid);
-      $delete_results->condition('question_vid', $this->question->vid);
-    }
-
-    // Delete from table quiz_ddlines_answer_multi
-    $user_answer_ids = array();
-    if ($single_revision) {
-      $query = db_query('SELECT id FROM {quiz_ddlines_answer} WHERE question_qid = :qid AND question_vid = :vid', array(':qid' => $this->question->qid, ':vid' => $this->question->vid));
-    }
-    else {
-      $query = db_query('SELECT id FROM {quiz_ddlines_answer} WHERE question_qid = :qid', array(':qid' => $this->question->qid));
-    }
-    while ($user_answer = $query->fetch()) {
-      $user_answer_ids[] = $user_answer->id;
-    }
-
-    if (count($user_answer_ids)) {
-      db_delete('quiz_ddlines_answer_multi')
-        ->condition('user_answer_id', $user_answer_ids)
-        ->execute();
-    }
-
-    $delete_question->execute();
-    $delete_results->execute();
-    parent::delete($single_revision);
   }
 
 }
